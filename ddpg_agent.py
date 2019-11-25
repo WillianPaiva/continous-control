@@ -19,14 +19,6 @@ WEIGHT_DECAY = 0.0      # L2 weight decay
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-
-
-
-
-
-
-
-
 class Agent():
     """Interacts with and learns from the environment."""
     
@@ -37,7 +29,15 @@ class Agent():
     critic_local = None
     critic_target = None
     critic_optimizer = None
-    
+    def init_models(self):
+        """ initialize all the models"""
+        Agent.actor_local = Actor(state_size, action_size, random_seed).to(device) 
+        Agent.actor_target = Actor(state_size, action_size, random_seed).to(device)
+        Agent.actor_optimizer = optim.Adam(Agent.actor_local.parameters(), lr=LR_ACTOR)
+        Agent.critic_local = Critic(state_size, action_size, random_seed).to(device)
+        Agent.critic_target = Critic(state_size, action_size, random_seed).to(device)
+        Agent.critic_optimizer = optim.Adam(Agent.critic_local.parameters(), lr=LR_CRITIC, weight_decay=WEIGHT_DECAY)
+
     def __init__(self, state_size, action_size, random_seed):
         """Initialize an Agent object.
         
@@ -51,24 +51,19 @@ class Agent():
         self.action_size = action_size
         self.seed = random.seed(random_seed)
 
-        
-        if Agent.actor_local is None:
-            Agent.actor_local = Actor(state_size, action_size, random_seed).to(device)
-        if Agent.actor_target is None:
-            Agent.actor_target = Actor(state_size, action_size, random_seed).to(device)
-        if Agent.actor_optimizer is None:
-            Agent.actor_optimizer = optim.Adam(Agent.actor_local.parameters(), lr=LR_ACTOR)
+        #initialize the models if needed 
+        if any( x is None for x in [Agent.actor_local,
+                                    Agent.actor_target,
+                                    Agent.actor_optimizer,
+                                    Agent.critic_local,
+                                    Agent.critic_target,
+                                    Agent.critic_optimizer]):
+            self.init_models() 
+
         self.actor_local = Agent.actor_local
         self.actor_target = Agent.actor_target
         self.actor_optimizer = Agent.actor_optimizer
 
-
-        if Agent.critic_local is None:
-            Agent.critic_local = Critic(state_size, action_size, random_seed).to(device)
-        if Agent.critic_target is None:
-            Agent.critic_target = Critic(state_size, action_size, random_seed).to(device)
-        if Agent.critic_optimizer is None:
-            Agent.critic_optimizer = optim.Adam(Agent.critic_local.parameters(), lr=LR_CRITIC, weight_decay=WEIGHT_DECAY)
         self.critic_local = Agent.critic_local
         self.critic_target = Agent.critic_target
         self.critic_optimizer = Agent.critic_optimizer
